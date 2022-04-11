@@ -16,20 +16,7 @@ RSpec.describe MultiprocessingPool do
   end
 
   
-
-  it "does the work in the pool given a function" do 
-
-    def foo(num)
-      num * 2
-    end
-    
-    MultiprocessingPool::ProcessPool(workers: 2) do |pool|
-      results = pool.map(self.method(:foo), [1,2,3])
-      expect(results).to eq([2,4,6])
-    end
-  end
-
-  it "does the work in the pool given an object" do 
+  it "does the work in the pool given a method" do 
 
     class Bar
       def triple(num)
@@ -37,12 +24,11 @@ RSpec.describe MultiprocessingPool do
       end
     end
 
-    b = Bar.new
-
     MultiprocessingPool::ProcessPool(workers: 2) do |pool|
-      results = pool.map(b.method(:triple), [1,2,3])
+      results = pool.map(Bar, :triple, [1,2,3])
       expect(results).to eq([3,6,9])
     end
-
+    
   end
+
 end
