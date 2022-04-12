@@ -24,8 +24,8 @@ module MultiprocessingPool
         :args => args
       }.to_json
       puts "Writing #{payload}"
-      msg = [payload].pack("Z*")
-      len = [msg.length].pack("S")
+      msg = WireProtocol.encode_message(payload)
+      len = WireProtocol.encode_length(msg)
       @parent_w.write(len)
       @parent_w.write(msg)
     end
@@ -85,8 +85,8 @@ module MultiprocessingPool
     end
 
     def get_task
-      len = @socket_r.read(2).unpack("S").first
-      payload = @socket_r.read(len).unpack("Z*").first
+      len = WireProtocol.decode_length(@socket_r.read(2))
+      payload = WireProtocol.decode_message(@socket_r.read(len))
       if payload.nil?
         puts "Warning child received null payload.  Did the parent die and close the socket?"
         shutdown
@@ -99,8 +99,8 @@ module MultiprocessingPool
 
     def put_result(task, result)
       payload = { :id => task["id"], :result => result }.to_json
-      msg = [payload].pack("Z*")
-      len = [msg.length].pack("S")
+      msg = WireProtocol.encode_message(payload)
+      len = WireProtocol.encode_length(msg)
       @socket_w.write(len)
       @socket_w.write(msg)
     end

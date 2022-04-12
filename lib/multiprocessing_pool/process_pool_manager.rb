@@ -134,7 +134,7 @@ module MultiprocessingPool
       # the entire response if it doesnt already
 
       begin     
-        len = sock.read_nonblock(2).unpack("S").first
+        len = WireProtocol.decode_length(sock.read_nonblock(2))
       rescue IO::WaitReadable
         puts "partial length"
         IO.select([sock])
@@ -142,7 +142,7 @@ module MultiprocessingPool
       end
       
       begin 
-        payload = sock.read_nonblock(len).unpack("Z*").first         
+        payload = WireProtocol.decode_message(sock.read_nonblock(len))
         return payload
       rescue IO::WaitReadable
         puts "partial message"
