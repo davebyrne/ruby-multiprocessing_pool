@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 module MultiprocessingPool
+
+  ##
+  # class describing the wire protocol.
+  # messages are sent with a 2 byte integer specifying length
+  # followed by the actual message as a null terminated string
   class WireProtocol
 
     def self.encode_length(message)
