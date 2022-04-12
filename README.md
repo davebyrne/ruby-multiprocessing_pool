@@ -2,7 +2,7 @@
 
 A process-based parallisim library for Ruby inspired by Python's [multiprocessing.Pool](https://docs.python.org/3/library/multiprocessing.html). MRI Ruby has a Global Interpretor Lock which prevents multiple threads from concurrently running.  This gem will spawn a group of independant worker processes which will effectively side-step the Global Interpretor Lock and allow true parallelism while hiding the complexity of multi-process IPC.
 
-Ruby 3.x introduces a experimental support for [Ractors](https://docs.ruby-lang.org/en/3.1/ractor_md.html) which allows parallel execution in a single process.  Please look at the `ractor` branch of this repository to see an implementation of the same API using Ractors in addition to Process based parallelism.
+Ruby 3.x introduces experimental support for [Ractors](https://docs.ruby-lang.org/en/3.1/ractor_md.html) which allows parallel execution in a single process.  To see an implementation of the same API using Ractors in addition to Process based parallelism, checkout the `ractor` branch of this repository.
 
 ## Installation
 
@@ -83,7 +83,7 @@ MultiprocessingPool::ProcessPool(workers: 2) do |pool|
 
     # submit a list of tasks to the pool and wait 
     # for the results
-    results = pool.map(Fibonacci, :calc, [
+    results = pool.map(Sum, :calc, [
         [1,1],
         [2,2]
     ])
