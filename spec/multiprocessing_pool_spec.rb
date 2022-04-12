@@ -7,7 +7,7 @@ RSpec.describe MultiprocessingPool do
 
   it "creates a pool and manages the lifecycle" do 
     mock_pool = double(:pool)
-    allow(MultiprocessingPool::ProcessPoolManager).to receive(:new).and_return(mock_pool)
+    allow(MultiprocessingPool::PoolManager).to receive(:new).and_return(mock_pool)
     expect(mock_pool).to receive(:start)
     expect(mock_pool).to receive(:join)
     MultiprocessingPool::ProcessPool(workers: 10) do |pool|

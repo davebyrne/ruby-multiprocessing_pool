@@ -2,18 +2,27 @@
 
 module MultiprocessingPool
   ##
-  # Creates a pool of processes and manages their lifecycle. 
+  # Creates a pool of workers and manages their lifecycle. 
   # This is is public interface for submiting work to the pool.
-  class ProcessPoolManager
+  class PoolManager
     def initialize(opts)
       unless !opts[:workers].nil? && opts[:workers].is_a?(Integer)
         raise MultiprocessingPool::Error.new("number of workers missing")
       end
 
+      unless !opts[:worker_type].nil? && opts[:worker_type].is_a?(Class)
+        raise MultiprocessingPool::Error.new("worker type is missing")
+      end
+
+      if opts[:receive_worker].nil?
+        raise MultiprocessingPool::Error.new("missing recieve worker")
+      end
+
       @workers = opts[:workers]
+      @worker_clazz = opts[:worker_type]
 
       @processes = []
-      @task_manager = TaskManager.new
+      @task_manager = TaskManager.new(opts[:receive_worker])
     end
 
     ##
@@ -21,7 +30,7 @@ module MultiprocessingPool
     # for submiting and receiving results from the pool
     def start
       (1..@workers).each do 
-        p = Process.new
+        p = @worker_clazz.new
         @processes << p
         p.start
         @task_manager.add_process p

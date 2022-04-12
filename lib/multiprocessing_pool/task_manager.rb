@@ -18,17 +18,17 @@ module MultiprocessingPool
   # children are busy or free.
   class TaskManager
 
-    def initialize
+    def initialize(receive_worker)
       @readers = []
       @mutex = Mutex.new
       @futures = {}
       @processes = CircularQueue.new
+      @receive_worker = receive_worker
       @log = Logger.new(STDOUT)
       @log.level = Logger::WARN
     end
 
     def add_process(process)
-      @readers << process.socket
       @processes << process
     end
 
@@ -39,7 +39,9 @@ module MultiprocessingPool
     def start
 
       @reader_thread = Thread.new do 
-        monitor_reads
+        @receive_worker.start(@processes) do |future|
+          update_future future
+        end
       end
 
     end
@@ -55,52 +57,7 @@ module MultiprocessingPool
       future
     end
 
-    ##
-    # using non-blocking IO, wait for any child to send
-    # task results.  update the future with the results
-    # when they are received
-    def monitor_reads
-
-      loop do 
-        ready_sockets = IO.select(@readers, [], [])
-      
-        read = ready_sockets[0]
-          read.each do |sock|
-            begin 
-              future = read_socket(sock)
-              update_future future unless future.nil?
-            rescue EOFError 
-              @log.warn "removing socket from dead process"
-              @readers.delete(sock)
-            end
-          end
-        
-      end
-    end
-
-    ##
-    # read the socket from the child with the results.
-    def read_socket(sock) 
-      
-      # fake a blocking socket when trying to read a full 
-      # message.  this prevents having to buffer the response.
-      # if the socket is readable, then it should shortly have 
-      # the entire response if it doesnt already
-
-      begin     
-        len = WireProtocol.decode_length(sock.read_nonblock(2))
-      rescue IO::WaitReadable
-        IO.select([sock])
-        retry 
-      end
-      
-      begin 
-        return WireProtocol.decode_message(sock.read_nonblock(len))
-      rescue IO::WaitReadable
-        IO.select([sock])
-        retry
-      end
-    end
+   
 
     ##
     # add a pending future to the in-flight tracking list
