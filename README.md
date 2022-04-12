@@ -19,6 +19,35 @@ And then execute:
 
 Note: *this gem has not been published to rubygems. It is only maintained on an as-needed-basis.*
 
+
+## Ractors
+To use Ruby Ractors instead of processes, just replace `MultiprocessingPool::ProcessPool` with `MultiprocessingPool::RactorPool`.  This requires Ruby >= 3.0.
+
+To calculate a fibonacci sequence in parallel:
+```ruby
+require 'multiprocessing_pool'
+
+# create a class that represents the work to do
+class Fibonacci
+    def calc(n)
+        return  n  if n <= 1 
+        calc( n - 1 ) + calc( n - 2 )
+    end
+end
+
+# this will run in a single process using Ractors instead of Processes
+MultiprocessingPool::RactorPool(workers: 2) do |pool|
+
+    # submit a list of tasks to the pool and wait 
+    # for the results
+    results = pool.map(Fibonacci, :calc, (1..5).to_a)
+    
+    # will return [1,1,2,3,5]
+    puts results
+
+end
+```
+
 ## Usage
 
 To calculate a fibonacci sequence in parallel:
@@ -83,7 +112,7 @@ MultiprocessingPool::ProcessPool(workers: 2) do |pool|
 
     # submit a list of tasks to the pool and wait 
     # for the results
-    results = pool.map(Fibonacci, :calc, [
+    results = pool.map(Sum, :calc, [
         [1,1],
         [2,2]
     ])
@@ -93,35 +122,6 @@ MultiprocessingPool::ProcessPool(workers: 2) do |pool|
 
 end
 ```
-
-## Ractors
-To use Ruby Ractors instead of processes, just replace `MultiprocessingPool::ProcessPool` with `MultiprocessingPool::RactorPool`.  This requires Ruby >= 3.0.
-
-To calculate a fibonacci sequence in parallel:
-```ruby
-require 'multiprocessing_pool'
-
-# create a class that represents the work to do
-class Fibonacci
-    def calc(n)
-        return  n  if n <= 1 
-        calc( n - 1 ) + calc( n - 2 )
-    end
-end
-
-# this will run in a single process using Ractors instead of Processes
-MultiprocessingPool::RactorPool(workers: 2) do |pool|
-
-    # submit a list of tasks to the pool and wait 
-    # for the results
-    results = pool.map(Fibonacci, :calc, (1..5).to_a)
-    
-    # will return [1,1,2,3,5]
-    puts results
-
-end
-```
-
 
 ## Differences from Python
 
