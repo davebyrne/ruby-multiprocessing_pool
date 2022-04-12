@@ -46,4 +46,19 @@ RSpec.describe MultiprocessingPool do
     
   end
 
+  it "works with ractors" do 
+
+    class Bar
+      def triple(num)
+        num * 3
+      end
+    end
+
+    MultiprocessingPool::RactorPool(workers: 2) do |pool|
+      results = pool.map(Bar, :triple, ([1,2,3]))
+      expect(results).to eq([3,6,9])
+    end
+    
+  end
+
 end

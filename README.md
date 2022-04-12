@@ -2,12 +2,14 @@
 
 A process-based parallisim library for Ruby inspired by Python's [multiprocessing.Pool](https://docs.python.org/3/library/multiprocessing.html). MRI Ruby has a Global Interpretor Lock which prevents multiple threads from concurrently running.  This gem will spawn a group of independant worker processes which will effectively side-step the Global Interpretor Lock and allow true parallelism while hiding the complexity of multi-process IPC.
 
+For Ruby 3, this library supports using Ractors instead of processes for parallelism while avoiding the GIL.  See examples below.
+
 ## Installation
 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'multiprocessing_pool',  git: 'https://github.com/davebyrne/ruby-multiprocessing-pool'
+gem 'multiprocessing_pool',  git: 'https://github.com/davebyrne/ruby-multiprocessing-pool', branch: 'ractor'
 ```
 
 And then execute:
@@ -91,6 +93,35 @@ MultiprocessingPool::ProcessPool(workers: 2) do |pool|
 
 end
 ```
+
+## Ractors
+To use Ruby Ractors instead of processes, just replace `MultiprocessingPool::ProcessPool` with `MultiprocessingPool::RactorPool`.  This requires Ruby >= 3.0.
+
+To calculate a fibonacci sequence in parallel:
+```ruby
+require 'multiprocessing_pool'
+
+# create a class that represents the work to do
+class Fibonacci
+    def calc(n)
+        return  n  if n <= 1 
+        calc( n - 1 ) + calc( n - 2 )
+    end
+end
+
+# this will run in a single process using Ractors instead of Processes
+MultiprocessingPool::RactorPool(workers: 2) do |pool|
+
+    # submit a list of tasks to the pool and wait 
+    # for the results
+    results = pool.map(Fibonacci, :calc, (1..5).to_a)
+    
+    # will return [1,1,2,3,5]
+    puts results
+
+end
+```
+
 
 ## Differences from Python
 

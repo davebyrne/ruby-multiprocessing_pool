@@ -8,6 +8,8 @@ require_relative "multiprocessing_pool/task_manager"
 require_relative "multiprocessing_pool/pool_manager"
 require_relative "multiprocessing_pool/process"
 require_relative "multiprocessing_pool/nonblocking_receive_worker"
+require_relative "multiprocessing_pool/ractor"
+require_relative "multiprocessing_pool/ractor_receive_worker"
 
 
 module MultiprocessingPool
@@ -26,4 +28,19 @@ module MultiprocessingPool
       pool.join
     end
   end
+
+  def self.RactorPool(opts, &block) 
+    std_opts = {
+      :worker_type => MultiprocessingPool::Ractor,
+      :receive_worker => RactorRecieveWorker.new
+    }
+    pool = PoolManager.new(opts.merge(std_opts))
+    begin 
+      pool.start
+      block.call pool
+    ensure 
+      pool.join
+    end
+  end
+
 end

@@ -33,10 +33,10 @@ module MultiprocessingPool
     # the open pipe.
     def submit(future, clazz, method, args)
       payload = { 
-        :id => future.id,
-        :class_name => clazz,
-        :method_name => method,
-        :args => args
+        "id" => future.id,
+        "class_name" => clazz,
+        "method_name" => method,
+        "args" => args
       }.to_json
       @log.debug "Writing #{payload}"
       msg = WireProtocol.encode_message(payload)
@@ -140,7 +140,7 @@ module MultiprocessingPool
     ##
     # send work results back to the parent
     def put_result(task, result)
-      payload = { :id => task["id"], :result => result }.to_json
+      payload = { "id" => task["id"], "result" => result }.to_json
       msg = WireProtocol.encode_message(payload)
       len = WireProtocol.encode_length(msg)
       @socket_w.write(len)

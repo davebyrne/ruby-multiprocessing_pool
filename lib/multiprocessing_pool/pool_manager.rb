@@ -18,10 +18,10 @@ module MultiprocessingPool
         raise MultiprocessingPool::Error.new("missing recieve worker")
       end
 
-      @workers = opts[:workers]
+      @num_workers = opts[:workers]
       @worker_clazz = opts[:worker_type]
 
-      @processes = []
+      @workers = []
       @task_manager = TaskManager.new(opts[:receive_worker])
     end
 
@@ -29,11 +29,11 @@ module MultiprocessingPool
     # start the pool of workers and the task manager 
     # for submiting and receiving results from the pool
     def start
-      (1..@workers).each do 
-        p = @worker_clazz.new
-        @processes << p
-        p.start
-        @task_manager.add_process p
+      (1..@num_workers).each do 
+        w = @worker_clazz.new
+        @workers << w
+        w.start
+        @task_manager.add_worker w
       end
 
       @task_manager.start
@@ -59,7 +59,7 @@ module MultiprocessingPool
     # stop the pool 
     def join 
       @task_manager.join
-      @processes.each { |p| p.join }
+      @workers.each { |p| p.join }
     end
 
   end

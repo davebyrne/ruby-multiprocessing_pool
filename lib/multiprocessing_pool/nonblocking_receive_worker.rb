@@ -23,7 +23,10 @@ module MultiprocessingPool
           read.each do |sock|
             begin 
               future = read_socket(sock)
-              yield future unless future.nil?
+              unless future.nil?
+                @log.debug "parent got #{future}"
+                yield JSON.parse(future)
+              end
             rescue EOFError 
               @log.warn "removing socket from dead process"
               readers.delete(sock)
