@@ -38,7 +38,7 @@ module MultiprocessingPool
 
     def join 
       @task_manager.join
-      @processes.to_a.each { |p| p.join }
+      @processes.each { |p| p.join }
     end
 
     private 
@@ -54,10 +54,15 @@ module MultiprocessingPool
   end
 
   class CircularQueue
+    include Enumerable
 
     def initialize 
       @idx = 0
       @arr = []
+    end
+
+    def each 
+      @arr.each { |i| yield i }
     end
 
     def next 

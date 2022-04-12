@@ -10,9 +10,13 @@ module MultiprocessingPool
   class Error < StandardError; end
   
   def self.ProcessPool(opts, &block)
+
     pool = ProcessPoolManager.new(opts)
-    pool.start
-    block.call pool
-    pool.join
+    begin 
+      pool.start
+      block.call pool
+    ensure 
+      pool.join
+    end
   end
 end

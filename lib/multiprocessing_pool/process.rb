@@ -85,7 +85,7 @@ module MultiprocessingPool
       payload = @socket_r.gets
       if payload.nil?
         puts "Warning child received null payload.  Did the parent die and close the socket?"
-        return nil
+        shutdown
       end
 
       data = JSON.parse(payload)

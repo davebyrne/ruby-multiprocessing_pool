@@ -31,4 +31,19 @@ RSpec.describe MultiprocessingPool do
     
   end
 
+  # it "does fibinacci to benchmark" do 
+  #   class Fibonacci 
+  #     def fibonacci( n )
+  #       return  n  if n <= 1 
+  #       fibonacci( n - 1 ) + fibonacci( n - 2 )
+  #     end 
+  #   end
+
+  #   MultiprocessingPool::ProcessPool(workers: 2) do |pool|
+  #     results = pool.map(Fibonacci, :fibonacci, (30..40).to_a)
+  #     expect(results).to eq([3,6,9])
+  #   end
+
+  # end
+
 end
