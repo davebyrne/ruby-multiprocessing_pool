@@ -3,6 +3,11 @@
 module MultiprocessingPool
   class Process
 
+    def initialize
+      @log = Logger.new(STDOUT)
+      @log.level = Logger::WARN
+    end
+
     def start
       @parent_r, @child_w = IO.pipe
       @child_r, @parent_w = IO.pipe
@@ -23,7 +28,7 @@ module MultiprocessingPool
         :method_name => method,
         :args => args
       }.to_json
-      puts "Writing #{payload}"
+      @log.debug "Writing #{payload}"
       msg = WireProtocol.encode_message(payload)
       len = WireProtocol.encode_length(msg)
       @parent_w.write(len)
@@ -43,6 +48,9 @@ module MultiprocessingPool
 
   class ChildProcess 
     def initialize(socket_r, socket_w)
+      @log = Logger.new(STDOUT)
+      @log.level = Logger::WARN
+      
       @socket_r = socket_r
       @socket_w = socket_w
 
@@ -88,12 +96,12 @@ module MultiprocessingPool
       len = WireProtocol.decode_length(@socket_r.read(2))
       payload = WireProtocol.decode_message(@socket_r.read(len))
       if payload.nil?
-        puts "Warning child received null payload.  Did the parent die and close the socket?"
+        @log.warn "Warning child received null payload.  Did the parent die and close the socket?"
         shutdown
       end
 
       data = JSON.parse(payload)
-      puts "received #{data}"
+      @log.debug "received #{data}"
       data
     end
 

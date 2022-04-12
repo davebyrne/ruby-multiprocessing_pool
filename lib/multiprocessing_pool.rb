@@ -3,6 +3,8 @@
 require_relative "multiprocessing_pool/version"
 require_relative "multiprocessing_pool/wire_protocol"
 require_relative "multiprocessing_pool/future"
+require_relative "multiprocessing_pool/circular_queue"
+require_relative "multiprocessing_pool/task_manager"
 require_relative "multiprocessing_pool/process_pool_manager"
 require_relative "multiprocessing_pool/process"
 
