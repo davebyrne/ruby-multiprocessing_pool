@@ -22,9 +22,12 @@ module MultiprocessingPool
         :class_name => clazz,
         :method_name => method,
         :args => args
-      }
-      puts "Writing #{payload.to_json}"
-      @parent_w.puts payload.to_json
+      }.to_json
+      puts "Writing #{payload}"
+      msg = [payload].pack("Z*")
+      len = [msg.length].pack("S")
+      @parent_w.write(len)
+      @parent_w.write(msg)
     end
 
     def socket 
@@ -82,7 +85,8 @@ module MultiprocessingPool
     end
 
     def get_task
-      payload = @socket_r.gets
+      len = @socket_r.read(2).unpack("S").first
+      payload = @socket_r.read(len).unpack("Z*").first
       if payload.nil?
         puts "Warning child received null payload.  Did the parent die and close the socket?"
         shutdown
@@ -94,8 +98,11 @@ module MultiprocessingPool
     end
 
     def put_result(task, result)
-      payload = { :id => task["id"], :result => result }
-      @socket_w.puts payload.to_json
+      payload = { :id => task["id"], :result => result }.to_json
+      msg = [payload].pack("Z*")
+      len = [msg.length].pack("S")
+      @socket_w.write(len)
+      @socket_w.write(msg)
     end
 
     def shutdown 

@@ -108,13 +108,15 @@ module MultiprocessingPool
     end
 
     def monitor_reads
+
       loop do 
         ready_sockets = IO.select(@readers, [], [])
       
         read = ready_sockets[0]
           read.each do |sock|
             begin 
-              update_future read_socket(sock)
+              future = read_socket(sock)
+              update_future future unless future.nil?
             rescue EOFError 
               puts "removing socket from dead process"
               @readers.delete(sock)
@@ -125,17 +127,27 @@ module MultiprocessingPool
     end
 
     def read_socket(sock) 
-      buffer = []
+      
+      # fake a blocking socket when trying to read a full 
+      # message.  this prevents having to buffer the response.
+      # if the socket is readable, then it should shortly have 
+      # the entire response if it doesnt already
+
+      begin     
+        len = sock.read_nonblock(2).unpack("S").first
+      rescue IO::WaitReadable
+        puts "partial length"
+        IO.select([sock])
+        retry 
+      end
+      
       begin 
-        while ch = sock.read_nonblock(1) 
-          buffer << ch
-          if ch == "\n" then
-            return buffer.join("")
-          end
-        end     
-      rescue IO::WaitReadable => blocking
-        puts "blocking before buffer is full. this should not happen."
-        return
+        payload = sock.read_nonblock(len).unpack("Z*").first         
+        return payload
+      rescue IO::WaitReadable
+        puts "partial message"
+        IO.select([sock])
+        retry
       end
     end
 

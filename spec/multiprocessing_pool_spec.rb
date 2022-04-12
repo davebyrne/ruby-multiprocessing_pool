@@ -25,7 +25,7 @@ RSpec.describe MultiprocessingPool do
     end
 
     MultiprocessingPool::ProcessPool(workers: 2) do |pool|
-      results = pool.map(Bar, :triple, [1,2,3])
+      results = pool.map(Bar, :triple, ([1,2,3]))
       expect(results).to eq([3,6,9])
     end
     
