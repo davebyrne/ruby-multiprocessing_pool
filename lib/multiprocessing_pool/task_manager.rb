@@ -19,17 +19,16 @@ module MultiprocessingPool
   class TaskManager
 
     def initialize
-      @readers = []
       @mutex = Mutex.new
       @futures = {}
-      @processes = CircularQueue.new
       @log = Logger.new(STDOUT)
       @log.level = Logger::WARN
+      @submit_queue = SemaphoreQueue.new
+      @future_queue = SemaphoreQueue.new
     end
 
-    def add_process(process)
-      @readers << process.socket
-      @processes << process
+    def create_process
+      Process.new(@submit_queue, @future_queue)
     end
 
     ##
@@ -47,58 +46,40 @@ module MultiprocessingPool
     ##
     # submit a new task to the pool and add the future 
     # to the monitoring pool
-    def submit(clazz, method, arg)
+    def submit(clazz, method, args)
       future = Future.new(SecureRandom.uuid)
       add_future future
-      @processes.next.submit(future, clazz, method, arg)
+
+      payload = { 
+        :id => future.id,
+        :class_name => clazz,
+        :method_name => method,
+        :args => args
+      }.to_json
+
+      @log.debug "Writing #{payload}"
+      msg = WireProtocol.encode_message(payload)
+      len = WireProtocol.encode_length(msg)
+      @submit_queue.socket_w.write(len)
+      @submit_queue.socket_w.write(msg)
       
       future
     end
 
     ##
-    # using non-blocking IO, wait for any child to send
-    # task results.  update the future with the results
-    # when they are received
+    # wait for any child to send task results.  
+    # update the future with the results when they are received
+    #
     def monitor_reads
 
+      sock = @future_queue.socket_r
+
       loop do 
-        ready_sockets = IO.select(@readers, [], [])
-      
-        read = ready_sockets[0]
-          read.each do |sock|
-            begin 
-              future = read_socket(sock)
-              update_future future unless future.nil?
-            rescue EOFError 
-              @log.warn "removing socket from dead process"
-              @readers.delete(sock)
-            end
-          end
+
+        len = WireProtocol.decode_length(sock.read(2))
+        future = WireProtocol.decode_message(sock.read(len))
+        update_future future unless future.nil?
         
-      end
-    end
-
-    ##
-    # read the socket from the child with the results.
-    def read_socket(sock) 
-      
-      # fake a blocking socket when trying to read a full 
-      # message.  this prevents having to buffer the response.
-      # if the socket is readable, then it should shortly have 
-      # the entire response if it doesnt already
-
-      begin     
-        len = WireProtocol.decode_length(sock.read_nonblock(2))
-      rescue IO::WaitReadable
-        IO.select([sock])
-        retry 
-      end
-      
-      begin 
-        return WireProtocol.decode_message(sock.read_nonblock(len))
-      rescue IO::WaitReadable
-        IO.select([sock])
-        retry
       end
     end
 
@@ -134,6 +115,8 @@ module MultiprocessingPool
     def join 
       @reader_thread.kill
       @reader_thread.join
+      @future_queue.close
+      @submit_queue.close
     end
 
   end

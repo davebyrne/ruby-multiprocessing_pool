@@ -2,6 +2,8 @@
 
 source "https://rubygems.org"
 
+gem 'sys_stuff', git: 'https://github.com/davebyrne/ruby-sys_stuff'
+
 # Specify your gem's dependencies in multiprocessing_pool.gemspec
 gemspec
 

@@ -3,56 +3,25 @@
 module MultiprocessingPool
   ##
   # class to represent the process doing the actual work.
-  # A pipe pair is created and a child process is forked.
-  # communication to the child is sent over this channel.
   class Process
 
-    def initialize
+    def initialize(receive_queue, future_queue)
       @log = Logger.new(STDOUT)
       @log.level = Logger::WARN
+      @receive_queue = receive_queue
+      @future_queue = future_queue
     end
 
     ##
     # fork the child process and start its busy loop
     # to wait for instructions
     def start
-      @parent_r, @child_w = IO.pipe
-      @child_r, @parent_w = IO.pipe
       @pid = ::Process.fork do 
-        @parent_r.close
-        @parent_w.close
-        child = ChildProcess.new(@child_r, @child_w)
+        child = ChildProcess.new(@receive_queue, @future_queue)
         child.start
       end
-      @child_r.close
-      @child_w.close
     end
-
-    ## 
-    # submit a task to the worker process over
-    # the open pipe.
-    def submit(future, clazz, method, args)
-      payload = { 
-        :id => future.id,
-        :class_name => clazz,
-        :method_name => method,
-        :args => args
-      }.to_json
-      @log.debug "Writing #{payload}"
-      msg = WireProtocol.encode_message(payload)
-      len = WireProtocol.encode_length(msg)
-      @parent_w.write(len)
-      @parent_w.write(msg)
-    end
-
-    ##
-    # the read-end of the pipe from the child.
-    # this is for receiving the results of a 
-    # work task
-    def socket 
-      @parent_r
-    end
-
+   
     ##
     # instruct the child process to exit with a USR1 signal.
     # wait for it to avoid any zombie processes
@@ -66,12 +35,12 @@ module MultiprocessingPool
   ##
   # actual child that does the processing
   class ChildProcess 
-    def initialize(socket_r, socket_w)
+    def initialize(receive_queue, future_queue)
       @log = Logger.new(STDOUT)
       @log.level = Logger::WARN
       
-      @socket_r = socket_r
-      @socket_w = socket_w
+      @receive_queue = receive_queue
+      @future_queue = future_queue
 
       @obj_cache = {}
 
@@ -125,8 +94,11 @@ module MultiprocessingPool
     ##
     # receive work instructions from the parent
     def get_task
-      len = WireProtocol.decode_length(@socket_r.read(2))
-      payload = WireProtocol.decode_message(@socket_r.read(len))
+      payload = nil
+      @receive_queue.lock do 
+        len = WireProtocol.decode_length(@receive_queue.socket_r.read(2))
+        payload = WireProtocol.decode_message(@receive_queue.socket_r.read(len))
+      end
       if payload.nil?
         @log.warn "Warning child received null payload.  Did the parent die and close the socket?"
         shutdown
@@ -141,10 +113,12 @@ module MultiprocessingPool
     # send work results back to the parent
     def put_result(task, result)
       payload = { :id => task["id"], :result => result }.to_json
-      msg = WireProtocol.encode_message(payload)
-      len = WireProtocol.encode_length(msg)
-      @socket_w.write(len)
-      @socket_w.write(msg)
+      @future_queue.lock do 
+        msg = WireProtocol.encode_message(payload)
+        len = WireProtocol.encode_length(msg)
+        @future_queue.socket_w.write(len)
+        @future_queue.socket_w.write(msg)
+      end
     end
 
     ##

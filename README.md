@@ -4,6 +4,8 @@ A process-based parallisim library for Ruby inspired by Python's [multiprocessin
 
 Ruby 3.x introduces experimental support for [Ractors](https://docs.ruby-lang.org/en/3.1/ractor_md.html) which allows parallel execution in a single process.  To see an implementation of the same API using Ractors in addition to Process based parallelism, checkout the `ractor` branch of this repository.
 
+Note: This branch uses the unreleased [SysStuff](https://github.com/davebyrne/ruby-sys_stuff) gem for Posix named semaphore support.  Since the `SysStuff` gem is not published, it is referenced in the Gemfile.  Tests must be run using `bundle exec rspec` to make sure bundler loads the dependency.
+
 ## Installation
 
 Add this line to your application's Gemfile:

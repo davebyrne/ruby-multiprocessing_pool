@@ -21,10 +21,9 @@ module MultiprocessingPool
     # for submiting and receiving results from the pool
     def start
       (1..@workers).each do 
-        p = Process.new
+        p = @task_manager.create_process
         @processes << p
         p.start
-        @task_manager.add_process p
       end
 
       @task_manager.start

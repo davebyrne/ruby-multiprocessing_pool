@@ -1,7 +1,14 @@
+GIT
+  remote: https://github.com/davebyrne/ruby-sys_stuff
+  revision: 29076ca9da3d1ec68941d44ac3a4ec9243f4643c
+  specs:
+    sys_stuff (0.1.0)
+
 PATH
   remote: .
   specs:
     multiprocessing_pool (0.1.0)
+      sys_stuff (~> 0.1.0)
 
 GEM
   remote: https://rubygems.org/
@@ -29,6 +36,7 @@ DEPENDENCIES
   multiprocessing_pool!
   rake (~> 13.0)
   rspec (~> 3.0)
+  sys_stuff!
 
 BUNDLED WITH
    2.3.7
